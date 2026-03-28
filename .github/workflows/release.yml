@@ -1,0 +1,125 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Build package
+        shell: powershell
+        run: |
+          # Generate ZIP and calculate SHA1
+          $srcPath = "src"
+          $zipName = "SubframeSelectorPro-${{ github.ref_name }}.zip"
+          
+          # Create ZIP archive
+          if (Test-Path $zipName) { Remove-Item $zipName }
+          Compress-Archive -Path $srcPath -DestinationPath $zipName
+          
+          # Calculate SHA1
+          $sha1 = (Get-FileHash -Path $zipName -Algorithm SHA1).Hash.ToLower()
+          
+          # Save SHA1 to file for next step
+          $sha1 | Out-File -FilePath sha1.txt
+          
+          Write-Host "ZIP created: $zipName"
+          Write-Host "SHA1: $sha1"
+
+      - name: Read SHA1 from file
+        id: sha
+        shell: powershell
+        run: |
+          $sha1 = (Get-Content sha1.txt).Trim()
+          echo "hash=$sha1" >> $env:GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            SubframeSelectorPro-${{ github.ref_name }}.zip
+            CHANGELOG.md
+          draft: false
+          prerelease: false
+          body: |
+            ## Installation
+            
+            Add this URL to PixInsight:
+            ```
+            https://raw.githubusercontent.com/Ft2801/SubframeSelectorPro/main/
+            ```
+            
+            Then in PixInsight: RESOURCES > Updates > Manage Repositories > Add
+            
+            For manual installation, download the ZIP file below and extract to your PixInsight scripts directory.
+            
+            **Package SHA1:** `${{ steps.sha.outputs.hash }}`
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update updates.xri
+        shell: powershell
+        run: |
+          $version = "${{ github.ref_name }}" -replace '^v', ''
+          $sha1 = (Get-Content sha1.txt).Trim()
+          $releaseDate = Get-Date -Format "yyyyMMdd"
+          
+          $xriContent = @"
+          <?xml version="1.0" encoding="UTF-8"?>
+          <xri version="1.0"
+               xmlns="http://www.pixinsight.com/xri"
+               xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+               xsi:schemaLocation="http://www.pixinsight.com/xri
+                  http://pixinsight.com/xri/xri-1.0.xsd">
+          
+             <description>
+                <title>SubframeSelectorPro</title>
+                <author>Fabio Tempera</author>
+                <url>https://github.com/Ft2801/SubframeSelectorPro</url>
+                <description>
+                   Automated subframe quality analysis and rejection tool.
+                   Analyzes PSF metrics and moves rejected frames to a separate folder.
+                </description>
+             </description>
+          
+             <platform os="all" arch="noarch">
+                <package
+                   fileName="SubframeSelectorPro-$version.zip"
+                   sha1="$sha1"
+                   url="https://github.com/Ft2801/SubframeSelectorPro/releases/download/${{ github.ref_name }}/SubframeSelectorPro-$version.zip"
+                   type="script"
+                   releaseDate="$releaseDate">
+                   <title>SubframeSelectorPro v$version</title>
+                   <description>
+                      SubframeSelectorPro v$version release.
+                   </description>
+                </package>
+             </platform>
+          
+          </xri>
+          "@
+          
+          Set-Content -Path "updates.xri" -Value $xriContent
+          Write-Host "updates.xri updated with version $version and SHA1 $sha1"
+
+      - name: Commit and push updates.xri
+        shell: powershell
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin
+          git checkout -b temp-branch origin/${{ github.event.repository.default_branch }}
+          git add updates.xri
+          git commit -m "Update updates.xri for release ${{ github.ref_name }}"
+          git push origin temp-branch:${{ github.event.repository.default_branch }}
+        continue-on-error: true

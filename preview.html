@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SubframeSelectorPro v1.0.0 — PixInsight UI Preview</title>
+<style>
+:root{
+   --bg:#2d2d2d;--bgi:#1e1e1e;--bgg:#333;--bgb:#4a4a4a;--slt:#1e1e1e;--slf:#5b8db8;
+   --btt:#4a4a2e;--bd:#555;--bdf:#6a9fd8;--bdg:#4a4a4a;--tx:#d0d0d0;--txd:#888;
+   --txb:#e8e8e8;--txo:#666;--txt:#e0e0c0;--ck:#6a9fd8;--ac:#5b8db8;
+   --f:12px "Segoe UI","Noto Sans","DejaVu Sans",Arial,sans-serif;
+   --fm:11px "Consolas","DejaVu Sans Mono",monospace;
+   --r:2px;--ih:22px;--bh:26px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#1a1a1a;color:var(--tx);font:var(--f);display:flex;justify-content:center;padding:20px 8px;line-height:1.4}
+
+/* Dialog */
+.D{background:var(--bg);border:1px solid #1a1a1a;border-top:1px solid #4a4a4a;border-left:1px solid #4a4a4a;
+   box-shadow:0 8px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,.04);width:730px;max-width:98vw}
+
+/* Titlebar */
+.T{background:linear-gradient(#404040,#353535);border-bottom:1px solid #2a2a2a;padding:0 10px;
+   display:flex;align-items:center;justify-content:space-between;height:28px;user-select:none}
+.T span{color:#c0c0c0;font-size:11px;font-weight:500;letter-spacing:.3px}
+.T div{display:flex;gap:4px}
+.T b{width:14px;height:14px;border-radius:1px;border:1px solid rgba(0,0,0,.3);display:flex;
+   align-items:center;justify-content:center;font-size:9px;cursor:pointer;color:#999}
+.T b.c{background:#8b4a4a}.T b.c:hover{background:#c44}.T b.m{background:#5a5a5a}
+
+/* Body */
+.B{padding:8px;display:flex;flex-direction:column;gap:5px}
+
+/* Title/desc */
+.ht{text-align:center;font-size:14px;font-weight:700;color:var(--txb);padding-top:2px}
+.hd{text-align:center;font-size:11px;color:var(--txd);line-height:1.5}
+
+/* Row */
+.R{display:flex;align-items:center;gap:6px;min-height:24px}
+
+/* GroupBox */
+.G{border:1px solid var(--bdg);border-radius:var(--r);padding:14px 8px 8px;position:relative;
+   background:var(--bgg);transition:opacity .2s}
+.G>u{position:absolute;top:-8px;left:10px;background:var(--bgg);padding:0 6px;font-size:11px;
+   font-weight:600;color:var(--txb);text-decoration:none;pointer-events:none}
+.G.off{opacity:.4;pointer-events:none}
+.G.off>u{color:var(--txo)}
+.Gc{display:flex;flex-direction:column;gap:5px}
+
+/* Grid: 7-col for threshold rows: [chk 18] [lbl 80] [ctrl 1fr] [gap 14] [chk 18] [lbl 80] [ctrl 1fr] */
+.tg{display:grid;grid-template-columns:18px 80px 1fr 14px 18px 80px 1fr;gap:5px 4px;align-items:center}
+.tg .ct{display:flex;align-items:center;gap:4px;min-width:0}
+.tg .sp{}
+/* Full-width row in grid */
+.tg .fw{grid-column:1/-1}
+/* FWHM special: chk+lbl then controls span cols 3-7 */
+.tg .fc{grid-column:3/8;display:flex;align-items:center;gap:4px}
+
+/* 2-col grids for weights/PSF: [lbl 90] [ctrl auto] [gap 20] [lbl 90] [ctrl auto] */
+.wg{display:grid;grid-template-columns:90px auto 20px 90px auto;gap:5px 4px;align-items:center}
+.pg{display:grid;grid-template-columns:90px auto 20px 90px auto;gap:5px 4px;align-items:center}
+
+/* Labels */
+.L{font-size:12px;color:var(--tx);text-align:right;white-space:nowrap}
+.Lu{font-size:11px;color:var(--txd);white-space:nowrap}
+
+/* Edit */
+.E{background:var(--bgi);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);
+   font:var(--f);height:var(--ih);padding:0 6px;flex:1;min-width:0;outline:none}
+.E:focus{border-color:var(--bdf);box-shadow:0 0 0 1px rgba(106,159,216,.25)}
+.E.pa{font:var(--fm);color:#a0b8d0}
+
+/* SpinBox */
+.sw{display:flex;align-items:center;gap:0;flex-shrink:0}
+.sp{background:var(--bgi);border:1px solid var(--bd);border-radius:var(--r) 0 0 var(--r);
+   color:var(--tx);font:var(--fm);height:var(--ih);padding:0 4px;text-align:right;outline:none}
+.sp:focus{border-color:var(--bdf)}
+.sa{display:flex;flex-direction:column;flex-shrink:0}
+.sa-b{width:16px;height:11px;background:var(--bgb);border:1px solid #3a3a3a;display:flex;
+   align-items:center;justify-content:center;cursor:pointer;font-size:7px;color:var(--txd);line-height:1}
+.sa-b:first-child{border-radius:0 2px 0 0}.sa-b:last-child{border-radius:0 0 2px 0;border-top:none}
+.sa-b:hover{background:#555;color:var(--tx)}
+
+/* Checkbox */
+.ck{display:flex;align-items:center;cursor:pointer;user-select:none;flex-shrink:0}
+.ck.w18{width:18px;justify-content:center}
+.ck input[type="checkbox"]{appearance:none;-webkit-appearance:none;width:14px;height:14px;
+   background:var(--bgi);border:1px solid var(--bd);border-radius:2px;cursor:pointer;position:relative;flex-shrink:0}
+.ck input:checked{background:var(--ck);border-color:var(--ck)}
+.ck input:checked::after{content:"✓";position:absolute;top:-1px;left:1px;font-size:11px;font-weight:700;color:#fff}
+.ck span{margin-left:5px;font-size:12px;white-space:nowrap}
+
+/* Radio */
+.ra{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+.ra input[type="radio"]{appearance:none;-webkit-appearance:none;width:14px;height:14px;
+   background:var(--bgi);border:1px solid var(--bd);border-radius:50%;cursor:pointer;position:relative;flex-shrink:0}
+.ra input:checked{border-color:var(--ck)}
+.ra input:checked::after{content:"";position:absolute;top:3px;left:3px;width:6px;height:6px;background:var(--ck);border-radius:50%}
+
+/* Select */
+.sl{background:var(--bgi);border:1px solid var(--bd);border-radius:var(--r);color:var(--tx);
+   font:var(--f);height:var(--ih);padding:0 20px 0 6px;cursor:pointer;outline:none;
+   appearance:none;-webkit-appearance:none;
+   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='5'%3E%3Cpath d='M0 0L4 5 8 0' fill='%23888'/%3E%3C/svg%3E");
+   background-repeat:no-repeat;background-position:right 6px center}
+.sl:focus{border-color:var(--bdf)}
+
+/* Slider */
+.sW{display:flex;align-items:center;gap:6px;flex:1}
+.sO{flex:1;height:18px;display:flex;align-items:center;position:relative;cursor:pointer}
+.sT{width:100%;height:4px;background:var(--slt);border:1px solid #333;border-radius:2px;position:relative;overflow:hidden}
+.sF{height:100%;background:var(--slf);border-radius:1px}
+.sH{position:absolute;width:12px;height:16px;background:linear-gradient(#6a6a6a,#555);
+   border:1px solid #444;border-radius:2px;top:50%;transform:translate(-50%,-50%);cursor:pointer;
+   box-shadow:0 1px 3px rgba(0,0,0,.4)}
+.sV{font:var(--fm);color:var(--tx);min-width:36px;text-align:right}
+
+/* Buttons */
+.bt{background:linear-gradient(#525252,#454545);border:1px solid #3a3a3a;border-radius:var(--r);
+   color:var(--tx);font:var(--f);height:var(--bh);padding:0 12px;cursor:pointer;white-space:nowrap;
+   display:inline-flex;align-items:center;gap:5px}
+.bt:hover{background:linear-gradient(#5c5c5c,#4f4f4f)}.bt:active{background:linear-gradient(#3e3e3e,#454545)}
+.bt.df{background:linear-gradient(#4a6a8a,#3d5a75);border-color:#2e4a62}
+.bt.df:hover{background:linear-gradient(#5a7a9a,#4d6a85)}
+.tb{background:linear-gradient(#4a4a4a,#404040);border:1px solid #3a3a3a;border-radius:var(--r);
+   width:24px;height:24px;display:flex;align-items:center;justify-content:center;cursor:pointer;
+   flex-shrink:0;font-size:14px;color:var(--txd)}
+.tb:hover{background:linear-gradient(#555,#4a4a4a);color:var(--tx)}
+.bR{display:flex;align-items:center;gap:6px;padding-top:2px}
+
+/* Misc */
+.st{flex:1}.s4{height:4px}.s2{height:2px}
+.sh{font-weight:600;font-size:11px;color:var(--txb);padding:2px 0 0}
+
+/* Tooltip */
+[data-t]{position:relative}
+[data-t]:hover::after{content:attr(data-t);position:absolute;bottom:calc(100% + 6px);left:50%;
+   transform:translateX(-50%);background:var(--btt);color:var(--txt);border:1px solid #6a6a4a;
+   padding:4px 8px;font-size:11px;max-width:340px;white-space:normal;border-radius:2px;
+   z-index:1000;box-shadow:0 2px 8px rgba(0,0,0,.5);pointer-events:none;line-height:1.4}
+
+/* Badge */
+.badge{position:fixed;top:6px;right:6px;background:rgba(91,141,184,.15);border:1px solid rgba(91,141,184,.3);
+   color:var(--ac);font-size:10px;padding:3px 10px;border-radius:3px;z-index:9999;font-weight:500;letter-spacing:.4px}
+
+/* Animations */
+.G.fi{animation:fi .2s ease}@keyframes fi{from{opacity:.3}to{opacity:1}}
+
+/* Sigma checkboxes row */
+.scr{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+
+@media(max-width:750px){
+   .D{width:100%}
+   .tg{grid-template-columns:18px 60px 1fr 10px 18px 60px 1fr}
+   .wg,.pg{grid-template-columns:70px auto 12px 70px auto}
+}
+</style>
+</head>
+<body>
+
+<div class="badge">UI PREVIEW — v1.0.0 — Not functional</div>
+
+<div class="D">
+
+   <!-- Titlebar -->
+   <div class="T">
+      <span>SubframeSelectorPro v1.0.0</span>
+      <div><b class="m">−</b><b class="m">□</b><b class="c">✕</b></div>
+   </div>
+
+   <div class="B">
+
+      <!-- Header -->
+      <div class="ht">SubframeSelectorPro v1.0.0</div>
+      <div class="hd" id="descText">Automated subframe quality analysis and rejection tool.<br>
+         Analyze PSF metrics and move rejected frames to a separate folder.</div>
+
+      <!-- Language selector (right-aligned) -->
+      <div class="R" style="justify-content:flex-end">
+         <span class="L" style="min-width:auto" id="lblLang">Language:</span>
+         <select class="sl" id="langSel" style="min-width:100px" onchange="changeLang(this.value)"
+                 data-t="Select interface language">
+            <option value="en" selected>English</option>
+            <option value="it">Italiano</option>
+            <option value="es">Español</option>
+            <option value="de">Deutsch</option>
+            <option value="fr">Français</option>
+         </select>
+      </div>
+
+      <!-- Input / Output -->
+      <div class="R">
+         <span class="L" style="min-width:110px" id="lblInDir">Input Directory:</span>
+         <input type="text" class="E pa" value="/home/user/astro/M31/lights/" data-t="Directory containing image files to analyze.">
+         <div class="tb" data-t="Select input directory">...</div>
+      </div>
+      <div class="R">
+         <span class="L" style="min-width:110px" id="lblRejDir">Rejected Folder:</span>
+         <input type="text" class="E" value="rejected" style="max-width:160px" data-t="Subfolder name for rejected frames.">
+         <div class="st"></div>
+      </div>
+
+      <!-- ── Options ── -->
+      <div class="G">
+         <u id="lblOptions">Options</u>
+         <div class="R" style="gap:16px;flex-wrap:wrap">
+            <label class="ck" data-t="Analyze and report without moving files.">
+               <input type="checkbox"><span id="lblDryRun">Dry Run (analyze only)</span></label>
+            <label class="ck" data-t="Apply rejection per filter group (FILTER keyword).">
+               <input type="checkbox" checked><span id="lblGroupFilter">Group by filter</span></label>
+            <label class="ck" data-t="Save CSV report with all metrics.">
+               <input type="checkbox" checked><span id="lblCSV">Export CSV report</span></label>
+            <label class="ck" data-t="Cache results. Re-run skips analysis if files unchanged.">
+               <input type="checkbox" checked><span id="lblCache">Use analysis cache</span></label>
+         </div>
+      </div>
+
+      <!-- ── Plate Scale Override + Native SS ── -->
+      <div class="G">
+         <u id="lblPlateScale">Plate Scale Override (optional — 0 = auto from FITS)</u>
+         <div class="R" style="gap:4px;flex-wrap:wrap">
+            <span class="L" style="min-width:90px" id="lblFocal">Focal Length:</span>
+            <div class="sw"><input type="text" class="sp" style="width:58px" value="0" data-t="Focal length in mm (0=auto from FITS)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+            <span class="Lu">mm</span>
+            <span style="width:16px"></span>
+            <span class="L" style="min-width:90px" id="lblPixSize">Pixel Size:</span>
+            <div class="sw"><input type="text" class="sp" style="width:55px" value="0.00" data-t="Pixel size in µm (0=auto from FITS)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+            <span class="Lu">µm</span>
+            <span style="width:16px"></span>
+            <label class="ck" data-t="Use PixInsight's native SubframeSelector process for PSF analysis. More accurate, supports batch.">
+               <input type="checkbox" checked><span id="lblNativeSS">Use native SubframeSelector</span></label>
+         </div>
+      </div>
+
+      <!-- ── Rejection Mode (3 radios) ── -->
+      <div class="G">
+         <u id="lblRejMode">Rejection Mode</u>
+         <div class="R" style="gap:20px">
+            <label class="ra"><input type="radio" name="m" value="t" checked onchange="tm()"><span id="lblModeThr">Absolute Threshold</span></label>
+            <label class="ra"><input type="radio" name="m" value="p" onchange="tm()"><span id="lblModePct">Best Percentage</span></label>
+            <label class="ra"><input type="radio" name="m" value="s" onchange="tm()"><span id="lblModeSig">Sigma Clipping</span></label>
+         </div>
+      </div>
+
+      <!-- ── Absolute Threshold ── -->
+      <div class="G" id="gT">
+         <u id="lblThrTitle">Absolute Threshold Settings</u>
+         <div class="tg">
+
+            <!-- FWHM: chk + label, then min+max spanning right -->
+            <label class="ck w18" data-t="Enable FWHM check"><input type="checkbox" checked></label>
+            <span class="L" id="lblFWHM">FWHM:</span>
+            <div class="fc">
+               <span class="Lu" id="lblMin">Min</span>
+               <div class="sw"><input type="text" class="sp" style="width:55px" value="0.50" data-t="Minimum FWHM"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <span style="width:10px"></span>
+               <span class="Lu" id="lblMax">Max</span>
+               <div class="sw"><input type="text" class="sp" style="width:55px" value="4.50" data-t="Maximum FWHM"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <span class="Lu" id="lblArcsec">arcsec</span>
+            </div>
+
+            <!-- Ecc | SNR -->
+            <label class="ck w18" data-t="Enable eccentricity check"><input type="checkbox" checked></label>
+            <span class="L" id="lblEcc">Ecc Max:</span>
+            <div class="ct"><div class="sw"><input type="text" class="sp" style="width:55px" value="0.650" data-t="Max eccentricity (0=circular, 1=linear)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div></div>
+            <div class="sp"></div>
+            <label class="ck w18" data-t="Enable SNR check"><input type="checkbox" checked></label>
+            <span class="L" id="lblSNR">SNR Min:</span>
+            <div class="ct"><div class="sw"><input type="text" class="sp" style="width:55px" value="15.0" data-t="Minimum signal-to-noise ratio"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div></div>
+
+            <!-- Residual | Stars -->
+            <label class="ck w18" data-t="Enable star residual check"><input type="checkbox" checked></label>
+            <span class="L" id="lblRes">Residual:</span>
+            <div class="ct"><div class="sw"><input type="text" class="sp" style="width:65px" value="0.0800" data-t="Max PSF fitting residual"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div></div>
+            <div class="sp"></div>
+            <label class="ck w18" data-t="Enable star count check"><input type="checkbox" checked></label>
+            <span class="L" id="lblStars">Min Stars:</span>
+            <div class="ct"><div class="sw"><input type="text" class="sp" style="width:55px" value="50" data-t="Minimum detected stars"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div></div>
+
+            <!-- Noise | Median min–max -->
+            <label class="ck w18" data-t="Enable noise check"><input type="checkbox" checked></label>
+            <span class="L" id="lblNoise">Noise Max:</span>
+            <div class="ct"><div class="sw"><input type="text" class="sp" style="width:75px" value="0.005000" data-t="Maximum normalized noise"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div></div>
+            <div class="sp"></div>
+            <label class="ck w18" data-t="Enable median check"><input type="checkbox" checked></label>
+            <span class="L" id="lblMedian">Median:</span>
+            <div class="ct">
+               <div class="sw"><input type="text" class="sp" style="width:55px" value="0.0500" data-t="Min median"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <span class="Lu">–</span>
+               <div class="sw"><input type="text" class="sp" style="width:55px" value="0.8500" data-t="Max median"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+            </div>
+         </div>
+      </div>
+
+      <!-- ── Best Percentage ── -->
+      <div class="G off" id="gP">
+         <u id="lblPctTitle">Best Percentage Settings</u>
+         <div class="Gc">
+            <!-- Slider -->
+            <div class="R">
+               <span class="L" style="min-width:80px" id="lblKeep">Keep Top %:</span>
+               <div class="sW">
+                  <div class="sO" id="sld" data-t="Keep top N% of frames (1-100%)">
+                     <div class="sT"><div class="sF" style="width:90%"></div></div>
+                     <div class="sH" style="left:90%"></div>
+                  </div>
+                  <div class="sV" id="sV">90%</div>
+               </div>
+            </div>
+            <div class="s2"></div>
+            <div class="sh" id="lblWeights">Quality Score Weights:</div>
+            <!-- Weights 2-col grid -->
+            <div class="wg">
+               <span class="L" id="lblWF">FWHM:</span>
+               <div class="sw"><input type="text" class="sp" style="width:44px" value="40" data-t="FWHM weight (lower=better)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <div></div>
+               <span class="L" id="lblWE">Eccentricity:</span>
+               <div class="sw"><input type="text" class="sp" style="width:44px" value="20" data-t="Eccentricity weight (lower=better)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+
+               <span class="L" id="lblWS">SNR:</span>
+               <div class="sw"><input type="text" class="sp" style="width:44px" value="25" data-t="SNR weight (higher=better)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <div></div>
+               <span class="L" id="lblWT">Star Count:</span>
+               <div class="sw"><input type="text" class="sp" style="width:44px" value="5" data-t="Star count weight (more=better)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+
+               <span class="L" id="lblWN">Noise:</span>
+               <div class="sw"><input type="text" class="sp" style="width:44px" value="10" data-t="Noise weight (lower=better)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <div></div><span class="L"></span><div></div>
+            </div>
+         </div>
+      </div>
+
+      <!-- ── Sigma Clipping ── -->
+      <div class="G off" id="gS">
+         <u id="lblSigTitle">Sigma Clipping Settings</u>
+         <div class="Gc">
+            <!-- σ Low / High in 2-col grid -->
+            <div class="wg">
+               <span class="L" id="lblSigLow">σ Low:</span>
+               <div class="sw"><input type="text" class="sp" style="width:48px" value="2.0" data-t="Reject below mean - σLow × stddev (SNR, stars)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+               <div></div>
+               <span class="L" id="lblSigHigh">σ High:</span>
+               <div class="sw"><input type="text" class="sp" style="width:48px" value="2.0" data-t="Reject above mean + σHigh × stddev (FWHM, ecc, noise)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+            </div>
+            <div class="s2"></div>
+            <div class="sh" id="lblSigApply">Apply sigma clipping to:</div>
+            <div class="scr">
+               <label class="ck"><input type="checkbox" checked><span>FWHM</span></label>
+               <label class="ck"><input type="checkbox" checked><span id="lblSCE">Eccentricity</span></label>
+               <label class="ck"><input type="checkbox" checked><span>SNR</span></label>
+               <label class="ck"><input type="checkbox" checked><span id="lblSCN">Noise</span></label>
+               <label class="ck"><input type="checkbox" checked><span id="lblSCT">Star Count</span></label>
+            </div>
+         </div>
+      </div>
+
+      <!-- ── Star Detection & PSF ── -->
+      <div class="G">
+         <u id="lblPSFTitle">Star Detection &amp; PSF Settings</u>
+         <div class="pg">
+            <span class="L" id="lblPSFFunc">PSF Function:</span>
+            <select class="sl" data-t="PSF model function for fitting" style="min-width:100px">
+               <option selected>Gaussian</option><option>Moffat 4</option><option>Moffat 6</option><option>Moffat 8</option>
+            </select>
+            <div></div>
+            <span class="L" id="lblStructL">Struct. Layers:</span>
+            <div class="sw"><input type="text" class="sp" style="width:44px" value="5" data-t="Wavelet layers for star detection"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+
+            <span class="L" id="lblSens">Sensitivity:</span>
+            <div class="sw"><input type="text" class="sp" style="width:55px" value="0.50" data-t="Detection sensitivity (0-1)"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+            <div></div>
+            <span class="L" id="lblMaxStars">Max Stars:</span>
+            <div class="sw"><input type="text" class="sp" style="width:55px" value="500" data-t="Max stars for PSF fitting"><div class="sa"><div class="sa-b">▲</div><div class="sa-b">▼</div></div></div>
+         </div>
+      </div>
+
+      <!-- ── Donation Link ── -->
+      <div class="R" style="justify-content:flex-end;background:rgba(91,141,184,.08);border:1px solid rgba(91,141,184,.2);border-radius:2px;padding:8px;margin:2px 0;gap:4px">
+         <span class="L" style="min-width:auto;font-size:11px" id="lblDonate">Support the developer — Buy me a coffee!</span>
+         <input type="text" class="E" value="buymeacoffee.com/fabiot2801z" style="max-width:200px;font-size:11px" readonly data-t="Donation link. Click to visit in browser.">
+         <div class="tb" onclick="window.open('https://buymeacoffee.com/fabiot2801z','_blank')" data-t="Support via Buy Me a Coffee" style="color:#5b8db8">🔗</div>
+      </div>
+
+      <!-- ── Buttons ── -->
+      <div class="bR">
+         <div class="tb" data-t="New Instance — drag to workspace">⬬</div>
+         <button class="bt" onclick="doRestore()" data-t="Restore previously rejected files" id="btnRestore">↩ Restore</button>
+         <button class="bt" onclick="doReset()" data-t="Reset all to defaults" id="btnReset">↻ Reset</button>
+         <div class="st"></div>
+         <button class="bt df" onclick="doRun()" data-t="Start analysis and rejection" id="btnRun">⏻ Run</button>
+         <button class="bt" data-t="Cancel and close" id="btnCancel">✕ Cancel</button>
+      </div>
+
+   </div>
+</div>
+
+<!-- ================================================================
+     JavaScript
+     ================================================================ -->
+<script>
+// ── Localization data ──
+var L = {
+   en: {
+      desc:"Automated subframe quality analysis and rejection tool.<br>Analyze PSF metrics and move rejected frames to a separate folder.",
+      lang:"Language:",inDir:"Input Directory:",rejDir:"Rejected Folder:",
+      options:"Options",dryRun:"Dry Run (analyze only)",groupFilter:"Group by filter",
+      csv:"Export CSV report",cache:"Use analysis cache",
+      plateScale:"Plate Scale Override (optional — 0 = auto from FITS)",
+      focal:"Focal Length:",pixSize:"Pixel Size:",nativeSS:"Use native SubframeSelector",
+      rejMode:"Rejection Mode",modeThr:"Absolute Threshold",modePct:"Best Percentage",modeSig:"Sigma Clipping",
+      thrTitle:"Absolute Threshold Settings",fwhm:"FWHM:",min:"Min",max:"Max",arcsec:"arcsec",
+      ecc:"Ecc Max:",snr:"SNR Min:",res:"Residual:",stars:"Min Stars:",noise:"Noise Max:",median:"Median:",
+      pctTitle:"Best Percentage Settings",keep:"Keep Top %:",
+      weights:"Quality Score Weights:",wF:"FWHM:",wE:"Eccentricity:",wS:"SNR:",wT:"Star Count:",wN:"Noise:",
+      sigTitle:"Sigma Clipping Settings",sigLow:"σ Low:",sigHigh:"σ High:",
+      sigApply:"Apply sigma clipping to:",scE:"Eccentricity",scN:"Noise",scT:"Star Count",
+      psfTitle:"Star Detection & PSF Settings",psfFunc:"PSF Function:",structL:"Struct. Layers:",
+      sens:"Sensitivity:",maxStars:"Max Stars:",
+      btnRestore:"↩ Restore",btnReset:"↻ Reset",btnRun:"⏻ Run",btnCancel:"✕ Cancel",
+      donate:"Support the developer — Buy me a coffee!",donateLink:"buymeacoffee.com/fabiot2801z"
+   },
+   it: {
+      desc:"Analisi automatica della qualità dei subframe.<br>Analizza le metriche PSF e sposta i frame scartati in una sottocartella.",
+      lang:"Lingua:",inDir:"Cartella di input:",rejDir:"Cartella scartati:",
+      options:"Opzioni",dryRun:"Prova (solo analisi)",groupFilter:"Raggruppa per filtro",
+      csv:"Esporta rapporto CSV",cache:"Usa cache analisi",
+      plateScale:"Override scala piatto (opzionale — 0 = auto da FITS)",
+      focal:"Lungh. focale:",pixSize:"Dim. pixel:",nativeSS:"Usa SubframeSelector nativo",
+      rejMode:"Modalità di scarto",modeThr:"Soglia assoluta",modePct:"Miglior percentuale",modeSig:"Sigma Clipping",
+      thrTitle:"Impostazioni soglia assoluta",fwhm:"FWHM:",min:"Min",max:"Max",arcsec:"arcsec",
+      ecc:"Ecc Max:",snr:"SNR Min:",res:"Residuo:",stars:"Stelle min:",noise:"Rumore max:",median:"Mediana:",
+      pctTitle:"Impostazioni miglior percentuale",keep:"Mantieni top %:",
+      weights:"Pesi del punteggio qualità:",wF:"FWHM:",wE:"Eccentricità:",wS:"SNR:",wT:"N° stelle:",wN:"Rumore:",
+      sigTitle:"Impostazioni Sigma Clipping",sigLow:"σ Basso:",sigHigh:"σ Alto:",
+      sigApply:"Applica sigma clipping a:",scE:"Eccentricità",scN:"Rumore",scT:"N° stelle",
+      psfTitle:"Rilevamento stelle e impostazioni PSF",psfFunc:"Funzione PSF:",structL:"Strati strutt.:",
+      sens:"Sensibilità:",maxStars:"Stelle max:",
+      btnRestore:"↩ Ripristina",btnReset:"↻ Ripristina",btnRun:"⏻ Esegui",btnCancel:"✕ Annulla",
+      donate:"Supporta lo sviluppatore — Offrimi un caffè!",donateLink:"buymeacoffee.com/fabiot2801z"
+   },
+   es: {
+      desc:"Herramienta automática de análisis de calidad de subframes.<br>Analiza métricas PSF y mueve los frames rechazados a una subcarpeta.",
+      lang:"Idioma:",inDir:"Directorio de entrada:",rejDir:"Carpeta rechazados:",
+      options:"Opciones",dryRun:"Simulación (solo analizar)",groupFilter:"Agrupar por filtro",
+      csv:"Exportar informe CSV",cache:"Usar caché de análisis",
+      plateScale:"Escala de placa manual (opcional — 0 = auto desde FITS)",
+      focal:"Dist. focal:",pixSize:"Tam. píxel:",nativeSS:"Usar SubframeSelector nativo",
+      rejMode:"Modo de rechazo",modeThr:"Umbral absoluto",modePct:"Mejor porcentaje",modeSig:"Sigma Clipping",
+      thrTitle:"Ajustes de umbral absoluto",fwhm:"FWHM:",min:"Mín",max:"Máx",arcsec:"arcseg",
+      ecc:"Ecc Máx:",snr:"SNR Mín:",res:"Residual:",stars:"Estrellas mín:",noise:"Ruido máx:",median:"Mediana:",
+      pctTitle:"Ajustes de mejor porcentaje",keep:"Mantener top %:",
+      weights:"Pesos de puntuación de calidad:",wF:"FWHM:",wE:"Excentricidad:",wS:"SNR:",wT:"N° estrellas:",wN:"Ruido:",
+      sigTitle:"Ajustes de Sigma Clipping",sigLow:"σ Bajo:",sigHigh:"σ Alto:",
+      sigApply:"Aplicar sigma clipping a:",scE:"Excentricidad",scN:"Ruido",scT:"N° estrellas",
+      psfTitle:"Detección de estrellas y ajustes PSF",psfFunc:"Función PSF:",structL:"Capas estruct.:",
+      sens:"Sensibilidad:",maxStars:"Estrellas máx:",
+      btnRestore:"↩ Restaurar",btnReset:"↻ Restablecer",btnRun:"⏻ Ejecutar",btnCancel:"✕ Cancelar",
+      donate:"Apoya al desarrollador — ¡Cómprame un café!",donateLink:"buymeacoffee.com/fabiot2801z"
+   },
+   de: {
+      desc:"Automatisches Subframe-Qualitätsanalyse-Tool.<br>Analysiert PSF-Metriken und verschiebt abgelehnte Frames in einen Unterordner.",
+      lang:"Sprache:",inDir:"Eingabeverzeichnis:",rejDir:"Abgelehnt-Ordner:",
+      options:"Optionen",dryRun:"Testlauf (nur analysieren)",groupFilter:"Nach Filter gruppieren",
+      csv:"CSV-Bericht exportieren",cache:"Analyse-Cache verwenden",
+      plateScale:"Plattenmaßstab-Überschreibung (optional — 0 = Auto aus FITS)",
+      focal:"Brennweite:",pixSize:"Pixelgröße:",nativeSS:"Nativen SubframeSelector verwenden",
+      rejMode:"Ablehnungsmodus",modeThr:"Absoluter Schwellenwert",modePct:"Beste Prozent",modeSig:"Sigma-Clipping",
+      thrTitle:"Absolute Schwellenwert-Einstellungen",fwhm:"FWHM:",min:"Min",max:"Max",arcsec:"Bogensek.",
+      ecc:"Exz Max:",snr:"SNR Min:",res:"Residuum:",stars:"Min Sterne:",noise:"Rauschen max:",median:"Median:",
+      pctTitle:"Beste-Prozent-Einstellungen",keep:"Top % behalten:",
+      weights:"Qualitätsbewertung Gewichte:",wF:"FWHM:",wE:"Exzentrizität:",wS:"SNR:",wT:"Sternanzahl:",wN:"Rauschen:",
+      sigTitle:"Sigma-Clipping-Einstellungen",sigLow:"σ Niedrig:",sigHigh:"σ Hoch:",
+      sigApply:"Sigma-Clipping anwenden auf:",scE:"Exzentrizität",scN:"Rauschen",scT:"Sternanzahl",
+      psfTitle:"Sternerkennung & PSF-Einstellungen",psfFunc:"PSF-Funktion:",structL:"Strukt. Ebenen:",
+      sens:"Empfindlichkeit:",maxStars:"Max Sterne:",
+      btnRestore:"↩ Wiederherstellen",btnReset:"↻ Zurücksetzen",btnRun:"⏻ Ausführen",btnCancel:"✕ Abbrechen",
+      donate:"Entwickler unterstützen — Kauf mir einen Kaffee!",donateLink:"buymeacoffee.com/fabiot2801z"
+   },
+   fr: {
+      desc:"Outil automatique d'analyse de qualité des sous-images.<br>Analyse les métriques PSF et déplace les images rejetées dans un sous-dossier.",
+      lang:"Langue :",inDir:"Répertoire d'entrée :",rejDir:"Dossier rejetés :",
+      options:"Options",dryRun:"Essai (analyser uniquement)",groupFilter:"Grouper par filtre",
+      csv:"Exporter rapport CSV",cache:"Utiliser le cache d'analyse",
+      plateScale:"Échelle de plaque manuelle (optionnel — 0 = auto depuis FITS)",
+      focal:"Focale :",pixSize:"Taille pixel :",nativeSS:"Utiliser SubframeSelector natif",
+      rejMode:"Mode de rejet",modeThr:"Seuil absolu",modePct:"Meilleur pourcentage",modeSig:"Sigma Clipping",
+      thrTitle:"Paramètres de seuil absolu",fwhm:"FWHM :",min:"Min",max:"Max",arcsec:"arcsec",
+      ecc:"Ecc Max :",snr:"SNR Min :",res:"Résidu :",stars:"Étoiles min :",noise:"Bruit max :",median:"Médiane :",
+      pctTitle:"Paramètres du meilleur pourcentage",keep:"Garder top % :",
+      weights:"Pondérations du score de qualité :",wF:"FWHM :",wE:"Excentricité :",wS:"SNR :",wT:"Nb étoiles :",wN:"Bruit :",
+      sigTitle:"Paramètres du Sigma Clipping",sigLow:"σ Bas :",sigHigh:"σ Haut :",
+      sigApply:"Appliquer le sigma clipping à :",scE:"Excentricité",scN:"Bruit",scT:"Nb étoiles",
+      psfTitle:"Détection d'étoiles et paramètres PSF",psfFunc:"Fonction PSF :",structL:"Couches struct. :",
+      sens:"Sensibilité :",maxStars:"Étoiles max :",
+      btnRestore:"↩ Restaurer",btnReset:"↻ Réinitialiser",btnRun:"⏻ Exécuter",btnCancel:"✕ Annuler",
+      donate:"Soutiens le développeur — Achète-moi un café !",donateLink:"buymeacoffee.com/fabiot2801z"
+   }
+};
+
+// Map of element IDs to translation keys
+var map = {
+   descText:"desc",lblLang:"lang",lblInDir:"inDir",lblRejDir:"rejDir",
+   lblOptions:"options",lblDryRun:"dryRun",lblGroupFilter:"groupFilter",lblCSV:"csv",lblCache:"cache",
+   lblPlateScale:"plateScale",lblFocal:"focal",lblPixSize:"pixSize",lblNativeSS:"nativeSS",
+   lblRejMode:"rejMode",lblModeThr:"modeThr",lblModePct:"modePct",lblModeSig:"modeSig",
+   lblThrTitle:"thrTitle",lblFWHM:"fwhm",lblMin:"min",lblMax:"max",lblArcsec:"arcsec",
+   lblEcc:"ecc",lblSNR:"snr",lblRes:"res",lblStars:"stars",lblNoise:"noise",lblMedian:"median",
+   lblPctTitle:"pctTitle",lblKeep:"keep",lblWeights:"weights",
+   lblWF:"wF",lblWE:"wE",lblWS:"wS",lblWT:"wT",lblWN:"wN",
+   lblSigTitle:"sigTitle",lblSigLow:"sigLow",lblSigHigh:"sigHigh",lblSigApply:"sigApply",
+   lblSCE:"scE",lblSCN:"scN",lblSCT:"scT",
+   lblPSFTitle:"psfTitle",lblPSFFunc:"psfFunc",lblStructL:"structL",lblSens:"sens",lblMaxStars:"maxStars",
+   lblDonate:"donate",
+   btnRestore:"btnRestore",btnReset:"btnReset",btnRun:"btnRun",btnCancel:"btnCancel"
+};
+
+function changeLang(lang) {
+   var t = L[lang]; if (!t) return;
+   for (var id in map) {
+      var el = document.getElementById(id);
+      if (!el) continue;
+      var key = map[id];
+      var val = t[key]; if (val === undefined) continue;
+      // GroupBox titles use <u> tag
+      if (el.tagName === 'U') el.textContent = val;
+      // Description uses innerHTML
+      else if (id === 'descText') el.innerHTML = val;
+      // Buttons
+      else if (el.tagName === 'BUTTON') el.innerHTML = val;
+      // Checkbox labels (span inside label)
+      else if (el.tagName === 'SPAN' && el.parentElement.classList.contains('ck'))
+         el.textContent = val;
+      else if (el.tagName === 'SPAN') el.textContent = val;
+      // Radio labels
+      else if (el.parentElement && el.parentElement.classList.contains('ra'))
+         el.textContent = val;
+   }
+}
+
+// ── Mode toggle ──
+function tm() {
+   var v = document.querySelector('input[name="m"]:checked').value;
+   document.getElementById('gT').classList.toggle('off', v !== 't');
+   document.getElementById('gP').classList.toggle('off', v !== 'p');
+   document.getElementById('gS').classList.toggle('off', v !== 's');
+   // Add fade-in to newly active group
+   ['gT','gP','gS'].forEach(function(id) {
+      var el = document.getElementById(id);
+      el.classList.remove('fi');
+      if (!el.classList.contains('off')) { void el.offsetWidth; el.classList.add('fi'); }
+   });
+}
+
+// ── Slider ──
+(function(){
+   var s=document.getElementById('sld'),v=document.getElementById('sV'),d=false;
+   function u(e){var r=s.getBoundingClientRect(),x=Math.max(0,Math.min(e.clientX-r.left,r.width)),
+      p=Math.max(1,Math.min(100,Math.round(x/r.width*100)));
+      s.querySelector('.sF').style.width=p+'%';s.querySelector('.sH').style.left=p+'%';v.textContent=p+'%';}
+   s.onmousedown=function(e){d=true;u(e);};
+   document.onmousemove=function(e){if(d)u(e);};
+   document.onmouseup=function(){d=false;};
+   s.addEventListener('touchstart',function(e){d=true;u(e.touches[0]);},{passive:true});
+   document.addEventListener('touchmove',function(e){if(d)u(e.touches[0]);},{passive:true});
+   document.addEventListener('touchend',function(){d=false;});
+})();
+
+// ── Spin arrows ──
+document.querySelectorAll('.sa').forEach(function(a){
+   var inp=a.previousElementSibling;
+   function step(){var v=inp.value;if(v.indexOf('.')<0)return 1;return Math.pow(10,-v.split('.')[1].length);}
+   function prec(){var v=inp.value;if(v.indexOf('.')<0)return 0;return v.split('.')[1].length;}
+   a.children[0].onclick=function(){var v=parseFloat(inp.value),s=step(),p=prec();inp.value=(v+s).toFixed(p);};
+   a.children[1].onclick=function(){var v=parseFloat(inp.value),s=step(),p=prec();if(v-s>=0)inp.value=(v-s).toFixed(p);};
+});
+
+// ── Run simulation ──
+function doRun() {
+   var d=document.querySelector('.E.pa').value;
+   if(!d.trim()){alert('Please select an input directory.');return;}
+   var m=document.querySelector('input[name="m"]:checked').value;
+   var mode = m==='t' ? 'Absolute Threshold' : m==='p' ? 'Best Percentage ('+document.getElementById('sV').textContent+')' : 'Sigma Clipping';
+   var dry = document.querySelectorAll('.ck input')[0].checked;
+   var msg='SubframeSelectorPro v1.0.0\n\n';
+   msg+='1. Scan: '+d+'\n';
+   msg+='2. Check analysis cache\n';
+   msg+='3. Analyze uncached frames (native SubframeSelector)\n';
+   msg+='4. Apply: '+mode+'\n';
+   if(document.querySelectorAll('.ck input')[1].checked) msg+='5. Per-filter grouping enabled\n';
+   if(dry) msg+='6. DRY RUN — no files moved\n'; else msg+='6. Move rejected → "'+document.querySelectorAll('.E')[1].value+'/"\n';
+   if(document.querySelectorAll('.ck input')[2].checked) msg+='7. Export CSV report\n';
+   msg+='\n(UI preview — no actual processing)';
+   alert(msg);
+}
+
+// ── Restore simulation ──
+function doRestore() {
+   alert('SubframeSelectorPro would:\n\n1. Read restore log from rejected/ folder\n2. Move all files back to original paths\n3. Remove restore log\n\n(UI preview — no actual processing)');
+}
+
+// ── Reset ──
+function doReset() {
+   var defs=['0.50','4.50','0.650','15.0','0.0800','50','0.005000','0.0500','0.8500',
+             '40','20','25','5','10','2.0','2.0','5','0.50','500','0','0.00'];
+   var sp=document.querySelectorAll('.sp');
+   for(var i=0;i<sp.length&&i<defs.length;i++) sp[i].value=defs[i];
+   document.querySelectorAll('.ck input').forEach(function(c){c.checked=true;});
+   document.querySelectorAll('.ck input')[0].checked=false; // dry run off by default
+   document.querySelectorAll('input[name="m"]')[0].checked=true;
+   document.querySelectorAll('input[name="m"]')[1].checked=false;
+   document.querySelectorAll('input[name="m"]')[2].checked=false;
+   tm();
+   document.querySelector('.sF').style.width='90%';
+   document.querySelector('.sH').style.left='90%';
+   document.getElementById('sV').textContent='90%';
+   document.querySelector('.sl:not(#langSel)').selectedIndex=0;
+   document.querySelectorAll('.E')[1].value='rejected';
+}
+</script>
+</body>
+</html>

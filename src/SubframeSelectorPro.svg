@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+   <!-- Background -->
+   <rect width="128" height="128" rx="24" fill="#2d2d2d" />
+   <rect width="128" height="128" rx="24" fill="url(#grad)" />
+   
+   <!-- Center Graphic (Subframe + Selector elements) -->
+   <!-- Frame -->
+   <rect x="24" y="24" width="80" height="80" rx="8" fill="none" stroke="#6a9fd8" stroke-width="6" />
+   
+   <!-- Star/PSF curve -->
+   <path d="M 34 84 Q 50 84 64 44 Q 78 84 94 84" fill="none" stroke="#e8e8e8" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+   
+   <!-- Threshold line -->
+   <line x1="20" y1="56" x2="108" y2="56" stroke="#c44" stroke-width="4" stroke-dasharray="8 4" />
+   
+   <!-- Checkmark / Accept -->
+   <path d="M 80 94 L 92 106 L 116 74" fill="none" stroke="#4caf50" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+
+   <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+         <stop offset="0%" stop-color="rgba(255,255,255,0.1)" />
+         <stop offset="100%" stop-color="rgba(0,0,0,0.4)" />
+      </linearGradient>
+   </defs>
+</svg>
