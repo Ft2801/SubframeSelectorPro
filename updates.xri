@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<xri version="1.0"
+     xmlns="http://www.pixinsight.com/xri"
+     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:schemaLocation="http://www.pixinsight.com/xri
+        http://pixinsight.com/xri/xri-1.0.xsd">
+
+   <description>
+      <title>SubframeSelectorPro</title>
+      <author>Fabio Tempera</author>
+      <url>https://github.com/Ft2801/SubframeSelectorPro</url>
+      <description>
+         Automated subframe quality analysis and rejection tool.
+         Analyzes PSF metrics and moves rejected frames to a separate folder.
+      </description>
+   </description>
+
+   <platform os="all" arch="noarch" version="1.8.9:2.0.0">
+      <package
+         fileName="SubframeSelectorPro-1.0.0.zip"
+         sha1="fadb5a4a83a0ebd600edfea9d9def2d97f1a8bfb"
+         url="https://github.com/Ft2801/SubframeSelectorPro/releases/download/v1.0.0/SubframeSelectorPro-1.0.0.zip"
+         type="script"
+         releaseDate="20260328">
+         <title>SubframeSelectorPro v1.0.0</title>
+         <description>
+            SubframeSelectorPro v1.0.0 release.
+         </description>
+      </package>
+   </platform>
+</xri>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
